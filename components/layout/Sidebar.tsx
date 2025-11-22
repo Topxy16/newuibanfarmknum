@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useAuth } from '../../hooks/useAuth'; // นำเข้า Hook
 import { usePathname } from 'next/navigation';
 
 interface SidebarProps {
@@ -14,6 +15,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const pathname = usePathname();
+    const { handleLogout } = useAuth();
 
     const navItems = [
         { name: 'แดชบอร์ด', icon: LayoutDashboard, href: '/' },
@@ -89,8 +91,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
                 {/* Logout */}
                 <button
-                    onClick={onClose}
-                    className="flex items-center gap-3 px-5 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors duration-200 w-full"
+                    onClick={() => {
+                        onClose();
+                        handleLogout(); // เรียกใช้ Logout
+                    }}
+                    className="flex items-center gap-3 px-5 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors duration-200 w-full justify-start"
                 >
                     <LogOut size={20} />
                     <span className="font-normal">ออกจากระบบ</span>
