@@ -3,9 +3,21 @@
 
 import { Plus, Search } from 'lucide-react';
 import React, { useState } from 'react';
+import Link from 'next/link';
 import StatCard from '../../../components/ui/StatCard';
 import TransactionItem from '../../../components/financial/TransactionItem';
 import TransactionFormModal from '../../../components/financial/TransactionFormModal';
+
+
+// *** DUMMY DATA วัตถุดิบ (ส่งไปให้ Modal) ***
+const DUMMY_MATERIALS = [
+    { name: 'ขนมปัง', price: 15, quantity: 28, unit: 'แผ่น' },
+    { name: 'เนย', price: 65, quantity: 1000, unit: 'กรัม' },
+    { name: 'น้ำตาล', price: 26, quantity: 1000, unit: 'กรัม' },
+    { name: 'พริกเผา', price: 100, quantity: 1000, unit: 'กรัม' },
+    { name: 'หมูหยอง', price: 120, quantity: 1000, unit: 'กรัม' },
+    { name: 'แพ็คเกจ', price: 80, quantity: 100, unit: 'ซอง' },
+];
 
 interface Transaction {
     id: string;
@@ -85,8 +97,9 @@ const FinancialReportsPage: React.FC = () => {
             {/* Transaction List Header */}
             <div className=" mb-4 p-4 bg-white rounded-3xl shadow-md border border-gray-100">
                 <div className='flex justify-between items-center'>
-                    <h2 className="text-xl font-bold text-text-primary">รายการรายรับ-รายจ่าย</h2>
+                    <h2 className="text-xl font-bold text-text-primary ml-4">รายการรายรับ-รายจ่าย</h2>
                     <div className="flex items-center gap-4 mb-4">
+
                         <div className="relative w-72">
                             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input
@@ -95,14 +108,21 @@ const FinancialReportsPage: React.FC = () => {
                                 className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-text-primary font-normal"
                             />
                         </div>
-
+                        {/* *** 1. ปุ่ม "จัดการวัตถุดิบ" ที่เพิ่มเข้ามา *** */}
+                        <Link href="/raw-materials">
+                            <button
+                                className="p-2 bg-amber-600 text-white rounded-full shadow-md hover:bg-amber-700 transition-colors duration-200 text-sm px-4 py-2"
+                            >
+                                จัดการวัตถุดิบ
+                            </button>
+                        </Link>
 
 
                     </div>
                 </div>
 
                 {/* Transaction List */}
-                <div className="bg-white rounded-3xl shadow-md overflow-hidden border border-gray-100 divide-y divide-gray-100">
+                <div className="bg-white rounded-xl overflow-hidden divide-y divide-gray-100">
                     {DUMMY_TRANSACTIONS.map((transaction, index) => (
                         <TransactionItem
                             key={transaction.id}
@@ -122,6 +142,7 @@ const FinancialReportsPage: React.FC = () => {
                 onClose={handleCloseModal}
                 mode={modalMode}
                 initialData={selectedTransaction}
+                materials={DUMMY_MATERIALS}
             />
         </div>
     );

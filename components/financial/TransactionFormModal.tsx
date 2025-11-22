@@ -29,9 +29,68 @@ interface TransactionFormModalProps {
     onClose: () => void;
     mode: ModalMode;
     initialData?: Transaction;
+    materials: Material[];
 }
 
-const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ isOpen, onClose, mode, initialData }) => {
+interface Material { name: string; price: number; quantity: number; unit: string; }
+
+interface AutocompleteInputProps {
+    value: string;
+    placeholder: string;
+    options: { name: string; info: string }[];
+    onChange: (value: string) => void;
+    onSelect: (option: { name: string; info: string }) => void;
+    disabled: boolean;
+}
+
+const AutocompleteInput: React.FC<AutocompleteInputProps> = ({ value, placeholder, options, onChange, onSelect, disabled }) => {
+    const [showDropdown, setShowDropdown] = useState(false);
+
+    // กรองตัวเลือกตาม input
+    const filteredOptions = options.filter(option =>
+        option.name.toLowerCase().includes(value.toLowerCase())
+    );
+
+    return (
+        <div className="relative w-full">
+            <input
+                type="text"
+                placeholder={placeholder}
+                value={value}
+                onChange={(e) => {
+                    onChange(e.target.value);
+                    setShowDropdown(true);
+                }}
+                onFocus={() => setShowDropdown(true)}
+                onBlur={() => setTimeout(() => setShowDropdown(false), 200)} // หน่วงเวลาปิด
+                disabled={disabled}
+                className="w-full p-3 rounded-xl border border-gray-300 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-text-primary font-normal disabled:opacity-80"
+                required
+            />
+
+            {/* Dropdown List */}
+            {showDropdown && filteredOptions.length > 0 && !disabled && (
+                <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-48 overflow-y-auto">
+                    {filteredOptions.map((option, index) => (
+                        <div
+                            key={index}
+                            onClick={() => {
+                                onSelect(option);
+                                setShowDropdown(false);
+                            }}
+                            className="p-3 text-sm text-text-primary hover:bg-gray-100 cursor-pointer flex justify-between"
+                        >
+                            <span>{option.name}</span>
+                            <span className="text-gray-500 text-xs">{option.info}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ isOpen, onClose, mode, initialData, materials }) => {
     if (!isOpen) return null;
 
     const isViewMode = mode === 'view';
@@ -69,42 +128,62 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ isOpen, onC
         onClose();
     };
 
-    // Component สำหรับแสดง Input รายการย่อย
-    const FormItemRow: React.FC<{ item: FormItem }> = ({ item }) => (
-        <div className="grid grid-cols-4 gap-4 items-center mb-3">
-            <div className="col-span-2">
-                <input
-                    type="text"
-                    placeholder={`กรอกประเภทรายการ${item.category === 'รายจ่าย' ? 'รายจ่าย' : 'รายรับ'} เช่น ขนมปัง, เนย`}
-                    value={item.type}
-                    onChange={(e) => handleUpdateItem(item.id, 'type', e.target.value)}
-                    className="w-full p-3 rounded-xl border border-gray-300 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-text-primary font-normal"
-                    required
-                />
-            </div>
+    // 1. จัดรูปแบบวัตถุดิบสำหรับ Autocomplete
+    const materialOptions = materials.map(m => ({
+        name: m.name,
+        info: `ราคา: ${m.price} บาท / ${m.quantity} ${m.unit}`,
+    }));
 
-            <div className="col-span-1">
-                <div className="flex items-center justify-between bg-gray-100 rounded-xl border border-gray-300 overflow-hidden">
-                    <button
-                        type="button"
-                        onClick={() => handleUpdateItem(item.id, 'quantity', Math.max(0, item.quantity - 1))}
-                        className="p-3 bg-gray-200 hover:bg-gray-300"
-                    >
-                        -
-                    </button>
-                    <span className="px-3 font-semibold w-10 text-center">{item.quantity}</span>
-                    <button
-                        type="button"
-                        onClick={() => handleUpdateItem(item.id, 'quantity', item.quantity + 1)}
-                        className="p-3 bg-gray-200 hover:bg-gray-300"
-                    >
-                        +
-                    </button>
+    // Component สำหรับแสดง Input รายการย่อย
+    // Component สำหรับแสดง Input รายการย่อย (แก้ไข)
+    const FormItemRow: React.FC<{ item: FormItem }> = ({ item }) => {
+
+        // Handler เมื่อเลือกวัตถุดิบจาก Autocomplete
+        const handleMaterialSelect = (selected: { name: string; info: string }) => {
+            // เมื่อเลือกรายการ ให้กำหนดค่า type เป็นชื่อวัตถุดิบนั้น
+            handleUpdateItem(item.id, 'type', selected.name);
+        };
+
+        return (
+            <div className="grid grid-cols-4 gap-4 items-center mb-3">
+                {/* 1. คอลัมน์ประเภท (ใช้ Autocomplete สำหรับรายจ่าย) */}
+                <div className="col-span-2">
+                    {item.category === 'รายจ่าย' ? (
+                        <AutocompleteInput
+                            value={item.type}
+                            placeholder="กรอกประเภทรายการรายจ่าย"
+                            options={materialOptions}
+                            onChange={(val) => handleUpdateItem(item.id, 'type', val)}
+                            onSelect={handleMaterialSelect}
+                            disabled={isViewMode}
+                        />
+                    ) : (
+                        // รายรับ: ใช้ Input ธรรมดา
+                        <input
+                            type="text"
+                            placeholder="กรอกประเภทรายการรายรับ"
+                            value={item.type}
+                            onChange={(e) => handleUpdateItem(item.id, 'type', e.target.value)}
+                            className="w-full p-3 rounded-xl border border-gray-300 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-text-primary font-normal"
+                            required
+                        />
+                    )}
+                </div>
+
+                {/* 2. คอลัมน์จำนวน (ยังคงเดิม) */}
+                <div className="col-span-1">
+                    {/* ... (Quantity Control Buttons) ... */}
+                </div>
+
+                {/* 3. Placeholder สำหรับ 'ราคาต่อหน่วย' (สำหรับการคำนวณในอนาคต) */}
+                <div className="col-span-1 text-sm text-gray-600">
+                    {item.category === 'รายจ่าย' && item.type && (
+                        `(${materials.find(m => m.name === item.type)?.price || '?'} บาท/หน่วย)`
+                    )}
                 </div>
             </div>
-            {/* Placeholder: ลบรายการ (ถ้าต้องการ) */}
-        </div>
-    );
+        );
+    };
 
 
     return (

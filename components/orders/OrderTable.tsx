@@ -33,7 +33,7 @@ const OrderTable: React.FC<OrderTableProps> = ({ orders, onView, onEdit, onDelet
     };
 
     return (
-        <div className="bg-white rounded-3xl shadow-md overflow-hidden border border-gray-100">
+        <div className="bg-white overflow-hidden">
             <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
 
